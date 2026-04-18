@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>My Personal AI Job Agent — Product Brief</title>
+<meta name="description" content="A one-page product brief for a personal AI job agent: the problem, the user, the solution, the differentiator, and the outcomes — written from a product lens, not a technical one." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --surface: #FFFFFF;
+    --ink: #1A1D1F;
+    --ink-soft: #52555A;
+    --muted: #8A8F96;
+    --line: #E8E6DF;
+    --accent: #0E7C66;
+    --accent-soft: #E6F4EF;
+    --warm: #E8734B;
+    --warm-soft: #FBE9DF;
+    --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+  /* HERO */
+  .hero {
+    padding: 72px 0 40px;
+    text-align: center;
+  }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    padding: 6px 14px;
+    background: var(--accent-soft);
+    border-radius: 999px;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(30px, 4.6vw, 46px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    max-width: 720px;
+    margin: 0 auto 20px;
+    color: var(--ink);
+  }
+  h1 em { color: var(--accent); font-style: normal; }
+  .lede {
+    font-size: clamp(16px, 1.7vw, 18px);
+    color: var(--ink-soft);
+    max-width: 620px;
+    margin: 0 auto 0;
+  }
+
+  /* META STRIP */
+  .meta {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    margin-top: 28px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .meta span strong { color: var(--ink-soft); font-weight: 600; }
+
+  /* TL;DR CARD */
+  .tldr {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin: 56px auto 0;
+    max-width: 760px;
+    box-shadow: var(--shadow);
+  }
+  .tldr .label {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .tldr p {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(18px, 2vw, 22px);
+    line-height: 1.45;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* SECTION */
+  section { padding: 64px 0; }
+  section + section { border-top: 1px solid var(--line); }
+  .section-kicker {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(26px, 3.2vw, 34px);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin-bottom: 24px;
+    color: var(--ink);
+  }
+  section p {
+    font-size: 16px;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+    max-width: 720px;
+  }
+  section p.callout {
+    background: var(--warm-soft);
+    border-left: 3px solid var(--warm);
+    border-radius: 0 10px 10px 0;
+    padding: 16px 20px;
+    color: var(--ink);
+    font-size: 15px;
+    margin-top: 20px;
+  }
+
+  /* STATS */
+  .outcomes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 8px;
+  }
+  @media (max-width: 720px) { .outcomes { grid-template-columns: repeat(2, 1fr); } }
+  .outcome {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px 20px;
+  }
+  .outcome .num {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .outcome .num .small { font-size: 17px; color: var(--muted); font-weight: 500; margin-left: 2px; }
+  .outcome .label {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .outcome .sub {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* PERSONA */
+  .persona {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-top: 8px;
+  }
+  .persona .name {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .persona .role {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 18px;
+    font-weight: 500;
+  }
+  .persona ul { list-style: none; }
+  .persona li {
+    font-size: 15px;
+    color: var(--ink-soft);
+    padding: 6px 0 6px 22px;
+    position: relative;
+  }
+  .persona li::before {
+    content: "›";
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* EXPERIENCE STEPS */
+  .experience {
+    display: grid;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .xp {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 26px;
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .xp .ic {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .xp h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .xp p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  /* TWO-UP SCOPE */
+  .twoup {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 8px;
+  }
+  @media (max-width: 720px) { .twoup { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    letter-spacing: 0.01em;
+  }
+  .card.in h3 { color: var(--accent); }
+  .card.out h3 { color: var(--warm); }
+  .card ul { list-style: none; }
+  .card li {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    padding: 8px 0 8px 24px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .card.in li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .card.out li::before {
+    content: "✗";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    color: var(--warm);
+    font-weight: 700;
+  }
+
+  /* DIFFERENTIATOR */
+  .diff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-top: 8px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  @media (max-width: 720px) { .diff-grid { grid-template-columns: 1fr; } }
+  .diff-col { padding: 28px 32px; }
+  .diff-col + .diff-col { border-left: 1px solid var(--line); }
+  @media (max-width: 720px) {
+    .diff-col + .diff-col { border-left: none; border-top: 1px solid var(--line); }
+  }
+  .diff-col h3 {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .diff-col.generic h3 { color: var(--warm); }
+  .diff-col.ours h3 { color: var(--accent); }
+  .diff-col ul { list-style: none; }
+  .diff-col li {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    padding: 6px 0;
+    line-height: 1.5;
+  }
+
+  /* ROADMAP */
+  .roadmap {
+    display: grid;
+    gap: 14px;
+    margin-top: 8px;
+  }
+  .phase {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 20px;
+    align-items: baseline;
+  }
+  @media (max-width: 560px) {
+    .phase { grid-template-columns: 1fr; gap: 6px; }
+  }
+  .phase .tag {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .phase.shipped .tag { color: var(--accent); }
+  .phase.next .tag { color: var(--warm); }
+  .phase.later .tag { color: var(--muted); }
+  .phase h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .phase p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 72px 24px 48px;
+    color: var(--muted);
+    font-size: 14px;
+    border-top: 1px solid var(--line);
+    margin-top: 48px;
+  }
+  footer a {
+    color: var(--ink);
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 2px;
+    transition: border-color 160ms ease;
+  }
+  footer a:hover { border-color: var(--accent); }
+  footer .tagline {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 18px;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+  footer .built {
+    margin-top: 20px;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HERO -->
+  <header class="hero">
+    <span class="eyebrow">Product brief · v1</span>
+    <h1>My Personal AI Job Agent — <em>a product in one page.</em></h1>
+    <p class="lede">Why it exists, who it serves, what it does, and what it chose not to do. Written from a product lens, not a technical one.</p>
+    <div class="meta">
+      <span><strong>Built by</strong> Harshitha Gangappa</span>
+      <span><strong>Role</strong> Senior PM, AI specialist</span>
+      <span><strong>Build window</strong> 7 days</span>
+      <span><strong>Running cost</strong> ₹0 / month</span>
+    </div>
+  </header>
+
+  <!-- TLDR -->
+  <div class="tldr">
+    <div class="label">The one-liner</div>
+    <p>A personal AI agent that reads 8 job platforms every morning, filters against my real career context, and drops 50 ranked, genuinely relevant roles into my inbox — so I spend time applying, not searching.</p>
+  </div>
+
+  <!-- PROBLEM -->
+  <section>
+    <div class="section-kicker">01 · Problem</div>
+    <h2>Generic AI job autopilots don't know me.</h2>
+    <p>Tools like Job Copilot, LazyApply and Massive are built to serve everyone on earth. That means they optimise for breadth — not for whether a role actually fits the person using them. When I tried them, out of 20 "recommended" jobs, only 5 to 7 felt genuinely relevant. The rest were noise: wrong seniority, wrong domain, wrong stage of career.</p>
+    <p>The gap isn't geography. It isn't scraping coverage. It's <strong>personalisation</strong>. A generic autopilot can't know that I'm a Senior PM who specialises in AI, that I care about product over project, that I'd rather read one sharp shortlist than scroll a firehose. And because it doesn't know, it hedges. It recommends everything. And "everything" is the same as "nothing" when you have ninety minutes before the next meeting.</p>
+    <p class="callout">The failure mode isn't the tool being bad. It's the tool being generic. A human recruiter who knew me for a day would outperform it. The ambition here is to give myself that recruiter — in software.</p>
+  </section>
+
+  <!-- USER -->
+  <section>
+    <div class="section-kicker">02 · The user</div>
+    <h2>One person. By design.</h2>
+    <p>This product has a user count of one. That's not a limitation — it's the whole point. Building for one real person, with a real resume and a real calendar, is what unlocks the personalisation that generic tools can't touch.</p>
+
+    <div class="persona">
+      <div class="name">The senior specialist, mid-search</div>
+      <div class="role">Archetype · transferable to any specialist IC / leader actively exploring roles</div>
+      <ul>
+        <li>Has a tight point of view on what they want next — and what they don't.</li>
+        <li>Can tell a great job from a mediocre one in three seconds, but can't afford to read 200 of them.</li>
+        <li>Doesn't want to auto-apply. Wants to apply deliberately, with context.</li>
+        <li>Values their morning attention more than their money.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- SOLUTION / EXPERIENCE -->
+  <section>
+    <div class="section-kicker">03 · The experience</div>
+    <h2>What the morning looks like.</h2>
+    <p>The product is consumed in under five minutes a day. No dashboard to log in to, no feed to scroll, no configuration to fiddle with. Just an email that knows what it's talking about.</p>
+
+    <div class="experience">
+      <div class="xp"><div class="ic">1</div><div><h3>The inbox ping at 08:15</h3><p>A digest arrives every morning with a one-line summary and a clean spreadsheet attached.</p></div></div>
+      <div class="xp"><div class="ic">2</div><div><h3>Fifty roles, already ranked</h3><p>The best-fit roles sit at the top. Each row carries a fit score, a freshness date, and the source platform.</p></div></div>
+      <div class="xp"><div class="ic">3</div><div><h3>Nothing I've seen before</h3><p>Yesterday's roles never reappear. If a role is on the list, it's new to me today.</p></div></div>
+      <div class="xp"><div class="ic">4</div><div><h3>One click, I'm applying</h3><p>Every row is a direct apply link. No intermediate landing page, no "sign in to see more."</p></div></div>
+    </div>
+  </section>
+
+  <!-- DIFFERENTIATOR -->
+  <section>
+    <div class="section-kicker">04 · Why this is different</div>
+    <h2>Personalisation, not aggregation.</h2>
+    <p>Most job tools compete on how many listings they can pile up. This one competes on how many it can confidently throw away. The job of the agent is to behave like a careful editor, not an eager aggregator.</p>
+
+    <div class="diff-grid">
+      <div class="diff-col generic">
+        <h3>Generic AI autopilots</h3>
+        <ul>
+          <li>Built for every user on the planet.</li>
+          <li>Optimise for volume of matches.</li>
+          <li>Ranking is broad and shallow.</li>
+          <li>Auto-apply to inflate numbers.</li>
+          <li>Noise rate: ~65–75% of results.</li>
+        </ul>
+      </div>
+      <div class="diff-col ours">
+        <h3>This agent</h3>
+        <ul>
+          <li>Built for exactly one real person.</li>
+          <li>Optimises for signal over volume.</li>
+          <li>Ranking uses the user's actual resume and preferences.</li>
+          <li>Human applies, agent curates.</li>
+          <li>Noise rate: ~30% and dropping.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- OUTCOMES -->
+  <section>
+    <div class="section-kicker">05 · Outcomes</div>
+    <h2>What changed after it shipped.</h2>
+    <p>The product has a single leading metric: the percentage of delivered roles that pass my own quality bar and get applied to. Everything else is secondary.</p>
+
+    <div class="outcomes">
+      <div class="outcome">
+        <div class="num">70<span class="small">%</span></div>
+        <div class="label">Apply rate</div>
+        <div class="sub">up from 52% baseline</div>
+      </div>
+      <div class="outcome">
+        <div class="num">50</div>
+        <div class="label">Ranked roles daily</div>
+        <div class="sub">down from ~300 raw</div>
+      </div>
+      <div class="outcome">
+        <div class="num">~5</div>
+        <div class="label">Minutes to triage</div>
+        <div class="sub">down from hours</div>
+      </div>
+      <div class="outcome">
+        <div class="num">₹0</div>
+        <div class="label">Running cost</div>
+        <div class="sub">free tiers only</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCOPE -->
+  <section>
+    <div class="section-kicker">06 · Scope</div>
+    <h2>What's in, what's deliberately out.</h2>
+    <p>A product is defined as much by what it refuses to do as by what it does. These lines were drawn on day one and held through seven days of building.</p>
+
+    <div class="twoup">
+      <div class="card in">
+        <h3>In scope</h3>
+        <ul>
+          <li>Reading across multiple job platforms every day</li>
+          <li>Filtering out stale, irrelevant, or out-of-context roles</li>
+          <li>Scoring and ranking against the user's real resume and preferences</li>
+          <li>Remembering what was seen before, so nothing repeats</li>
+          <li>Delivering a clean, sortable shortlist by email</li>
+        </ul>
+      </div>
+      <div class="card out">
+        <h3>Out of scope</h3>
+        <ul>
+          <li>Auto-applying on the user's behalf</li>
+          <li>Writing cover letters or editing resumes</li>
+          <li>Impersonating the user in recruiter conversations</li>
+          <li>Replacing the judgement of the person searching</li>
+          <li>Scaling to many users — this is a personal tool, not a platform</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section>
+    <div class="section-kicker">07 · Where it's going</div>
+    <h2>The next few product bets.</h2>
+    <p>Shipping v1 is the easy part. The interesting product questions start now — around how much context the agent is allowed to carry, and how honest it's allowed to be.</p>
+
+    <div class="roadmap">
+      <div class="phase shipped">
+        <div class="tag">Shipped</div>
+        <div><h3>v1 — The daily shortlist</h3><p>Eight platforms read, fifty roles ranked, zero duplicates, one email. Runs on its own every morning.</p></div>
+      </div>
+      <div class="phase next">
+        <div class="tag">Next</div>
+        <div><h3>v2 — Feedback that actually changes tomorrow</h3><p>A one-tap "not for me" signal that shapes the next day's ranking. The agent should learn from what I skip, not just what I apply to.</p></div>
+      </div>
+      <div class="phase next">
+        <div class="tag">Next</div>
+        <div><h3>v2 — An honest "why this role" note</h3><p>Each top role shows a short, plain-English reason it made the cut. If the reason is weak, the rank should be weak.</p></div>
+      </div>
+      <div class="phase later">
+        <div class="tag">Later</div>
+        <div><h3>v3 — Pattern surfacing across weeks</h3><p>Once there's enough history, call out the quiet trends — which companies keep showing up, which role titles are drifting, where the market is actually hiring.</p></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="tagline">Built for one. On purpose.</div>
+  <div>By <a href="https://www.linkedin.com/in/harshitha-gangappa/" target="_blank" rel="noopener">Harshitha Gangappa</a></div>
+  <div class="built">A personal experiment in what "personalised" actually means. · April 2026</div>
+</footer>
+
+</body>
+</html>

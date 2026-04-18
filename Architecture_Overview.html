@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>My Personal AI Job Agent — Architecture Overview</title>
+<meta name="description" content="A minimal one-page architecture of a personal AI job agent. Same workflow as the full engineering doc, stripped to the parts most people actually need." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --surface: #FFFFFF;
+    --ink: #1A1D1F;
+    --ink-soft: #52555A;
+    --muted: #8A8F96;
+    --line: #E8E6DF;
+    --accent: #0E7C66;
+    --accent-soft: #E6F4EF;
+    --warm: #E8734B;
+    --warm-soft: #FBE9DF;
+    --blue: #2563EB;
+    --blue-soft: #EAF2FF;
+    --purple: #7C3AED;
+    --purple-soft: #F3EDFF;
+    --amber: #B45309;
+    --amber-soft: #FEF3C7;
+    --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+  /* HERO */
+  .hero { padding: 64px 0 32px; text-align: center; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    padding: 6px 14px;
+    background: var(--accent-soft);
+    border-radius: 999px;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(30px, 4.4vw, 44px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    max-width: 720px;
+    margin: 0 auto 18px;
+  }
+  h1 em { color: var(--accent); font-style: normal; }
+  .lede {
+    font-size: clamp(15px, 1.6vw, 17px);
+    color: var(--ink-soft);
+    max-width: 620px;
+    margin: 0 auto 28px;
+  }
+  .meta-strip {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .meta-strip strong { color: var(--ink-soft); font-weight: 600; }
+
+  /* SECTION */
+  section { padding: 48px 0; }
+  section + section { border-top: 1px solid var(--line); }
+  .kicker {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(24px, 3vw, 32px);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin-bottom: 22px;
+  }
+  section p.intro {
+    font-size: 16px;
+    color: var(--ink-soft);
+    margin-bottom: 20px;
+    max-width: 720px;
+  }
+
+  /* PIPELINE RIBBON */
+  .ribbon {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 900px) { .ribbon { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .ribbon { grid-template-columns: repeat(2, 1fr); } }
+  .rib {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    position: relative;
+  }
+  .rib .n {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .rib .t { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .rib .s { font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .rib.c1 .n { color: var(--accent); background: var(--accent-soft); }
+  .rib.c2 .n { color: var(--blue); background: var(--blue-soft); }
+  .rib.c3 .n { color: var(--purple); background: var(--purple-soft); }
+  .rib.c4 .n { color: var(--amber); background: var(--amber-soft); }
+  .rib.c5 .n { color: var(--accent); background: var(--accent-soft); }
+  .rib.c6 .n { color: var(--warm); background: var(--warm-soft); }
+  .flowline {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 14px;
+    font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+  }
+
+  /* STACK GRID */
+  .stack {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 900px) { .stack { grid-template-columns: repeat(2, 1fr); } }
+  .chip {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .chip .name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .chip .role { font-size: 12px; color: var(--ink-soft); line-height: 1.45; }
+  .chip .tier { font-size: 11px; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+  /* DECISIONS */
+  .decisions { display: grid; gap: 12px; }
+  .dec {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .dec h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .dec p { font-size: 14px; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+  .dec.d2 { border-left-color: var(--blue); }
+  .dec.d3 { border-left-color: var(--purple); }
+  .dec.d4 { border-left-color: var(--amber); }
+  .dec.d5 { border-left-color: var(--warm); }
+
+  /* SCOPE */
+  .twoup { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .twoup { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; letter-spacing: 0.01em; }
+  .card.in h3 { color: var(--accent); }
+  .card.out h3 { color: var(--warm); }
+  .card ul { list-style: none; }
+  .card li {
+    font-size: 14px;
+    color: var(--ink-soft);
+    padding: 6px 0 6px 22px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .card.in li::before { content: "✓"; position: absolute; left: 0; top: 6px; color: var(--accent); font-weight: 700; }
+  .card.out li::before { content: "✗"; position: absolute; left: 0; top: 6px; color: var(--warm); font-weight: 700; }
+
+  /* FORK THIS */
+  .forks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (max-width: 720px) { .forks { grid-template-columns: 1fr; } }
+  .fork {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .fork .num {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .fork h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .fork p { font-size: 13px; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+
+  /* POINTER */
+  .pointer {
+    background: var(--ink);
+    color: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    margin-top: 8px;
+  }
+  .pointer h3 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #fff;
+  }
+  .pointer p { font-size: 14px; color: #B8BCC2; max-width: 540px; margin: 0 auto 18px; }
+  .pointer a {
+    display: inline-block;
+    background: #fff;
+    color: var(--ink);
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 160ms ease;
+  }
+  .pointer a:hover { transform: translateY(-1px); }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 56px 24px 40px;
+    color: var(--muted);
+    font-size: 13px;
+    border-top: 1px solid var(--line);
+    margin-top: 32px;
+  }
+  footer a {
+    color: var(--ink);
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+  }
+  footer a:hover { border-color: var(--accent); }
+  footer .tagline {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 16px;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  code {
+    font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
+    font-size: 0.88em;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HERO -->
+  <header class="hero">
+    <span class="eyebrow">Architecture · overview</span>
+    <h1>The architecture, <em>in one skim.</em></h1>
+    <p class="lede">Same workflow as the full engineering doc — stripped to the parts most people actually need. If you want deeper internals, a link to the detailed view sits at the bottom.</p>
+    <div class="meta-strip">
+      <span><strong>8</strong> job platforms</span>
+      <span><strong>50</strong> ranked roles daily</span>
+      <span><strong>20 min</strong> daily runtime</span>
+      <span><strong>₹0</strong> / month</span>
+    </div>
+  </header>
+
+  <!-- PIPELINE RIBBON -->
+  <section>
+    <div class="kicker">01 · Pipeline</div>
+    <h2>Six boxes, end to end.</h2>
+    <p class="intro">Every morning the same six stages run, in order. Each stage is independent — a failure in one doesn't take down the next.</p>
+
+    <div class="ribbon">
+      <div class="rib c1"><div class="n">01</div><div class="t">Trigger</div><div class="s">08:15 IST<br/>dual + idempotent</div></div>
+      <div class="rib c2"><div class="n">02</div><div class="t">Scrape</div><div class="s">8 platforms<br/>~380 raw jobs</div></div>
+      <div class="rib c3"><div class="n">03</div><div class="t">Dedup</div><div class="s">URL + semantic<br/>30-day window</div></div>
+      <div class="rib c4"><div class="n">04</div><div class="t">Score</div><div class="s">3 layers<br/>rules then LLM</div></div>
+      <div class="rib c5"><div class="n">05</div><div class="t">Rank</div><div class="s">tier, merge<br/>top-50 cap</div></div>
+      <div class="rib c6"><div class="n">06</div><div class="t">Deliver</div><div class="s">Excel + email<br/>by 08:18 IST</div></div>
+    </div>
+    <div class="flowline">cron-job.org / GitHub cron → 8 scrapers → SQLite dedup → rules + LLM → top-50 cap → Excel + Resend</div>
+  </section>
+
+  <!-- STACK -->
+  <section>
+    <div class="kicker">02 · Stack</div>
+    <h2>What it's built on.</h2>
+    <p class="intro">Eight external services, every one of them sitting comfortably inside its free tier at current usage. No servers, no databases to manage, no credit card required.</p>
+
+    <div class="stack">
+      <div class="chip">
+        <div class="name">GitHub Actions</div>
+        <div class="role">Cloud runner + orchestrator</div>
+        <div class="tier">2,000 min/mo free · ~180 used</div>
+      </div>
+      <div class="chip">
+        <div class="name">Python 3.11</div>
+        <div class="role">Orchestrator + scrapers + scoring</div>
+        <div class="tier">Standard library + ~10 small deps</div>
+      </div>
+      <div class="chip">
+        <div class="name">SQLite (in repo)</div>
+        <div class="role">Dedup + queue + score cache</div>
+        <div class="tier">~400 KB · git-versioned</div>
+      </div>
+      <div class="chip">
+        <div class="name">Groq LLM</div>
+        <div class="role">Scoring the ambiguous tail</div>
+        <div class="tier">30 RPM free · ~5 RPM used</div>
+      </div>
+      <div class="chip">
+        <div class="name">Apify</div>
+        <div class="role">Indeed via managed actor</div>
+        <div class="tier">$5/mo credit · ~$0.75 used</div>
+      </div>
+      <div class="chip">
+        <div class="name">ScraperAPI</div>
+        <div class="role">Wellfound residential proxy</div>
+        <div class="tier">1,000 credits/mo · ~600 used</div>
+      </div>
+      <div class="chip">
+        <div class="name">Adzuna</div>
+        <div class="role">Multi-board aggregator API</div>
+        <div class="tier">1,000 calls/mo · ~60 used</div>
+      </div>
+      <div class="chip">
+        <div class="name">Resend + cron-job.org</div>
+        <div class="role">Email delivery + external trigger</div>
+        <div class="tier">Both free tier · well under cap</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DECISIONS -->
+  <section>
+    <div class="kicker">03 · The five big decisions</div>
+    <h2>Every choice is a trade-off.</h2>
+    <p class="intro">Five choices carry most of the architecture. Each one had a cheaper alternative that I rejected for a specific reason.</p>
+
+    <div class="decisions">
+      <div class="dec">
+        <h3>Cloud-first, not local</h3>
+        <p>Runs on GitHub Actions, not on my laptop. My machine can sleep, travel, or be in a hospital recovery room — the agent runs anyway. A local cron would break the moment I closed the lid.</p>
+      </div>
+      <div class="dec d2">
+        <h3>SQLite committed to the repo, not Postgres</h3>
+        <p>The database is tiny, single-writer, and only persists across daily runs. Git gives me free versioning, free backup, zero infra. If it corrupts, I revert one commit. Postgres would be complexity I don't need.</p>
+      </div>
+      <div class="dec d3">
+        <h3>LLM only for the ambiguous tail, not for every job</h3>
+        <p>Rules handle ~70% of decisions deterministically. The LLM earns its quota on the 30% where language ambiguity actually matters. Same logic as a senior reviewer: automate what's obvious, think about what isn't.</p>
+      </div>
+      <div class="dec d4">
+        <h3>Dual-trigger, idempotent</h3>
+        <p>An external cron (cron-job.org) fires first; GitHub's own cron is the backup. Both land in the same workflow, and a pre-flight guard makes double-firing a safe no-op. Belt and suspenders, at zero cost.</p>
+      </div>
+      <div class="dec d5">
+        <h3>Human applies, agent curates</h3>
+        <p>I deliberately didn't build auto-apply. The agent's job is to hand me a clean shortlist; the application itself stays my decision. Faster-but-worse isn't the goal — better-and-faster is.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCOPE -->
+  <section>
+    <div class="kicker">04 · Scope</div>
+    <h2>What's in, what's deliberately out.</h2>
+    <p class="intro">Drawn on day one, held through seven days of building.</p>
+
+    <div class="twoup">
+      <div class="card in">
+        <h3>In scope</h3>
+        <ul>
+          <li>Reading across multiple job platforms every day</li>
+          <li>Filtering out stale, irrelevant, out-of-context roles</li>
+          <li>Scoring against the user's real resume and preferences</li>
+          <li>Remembering what was seen before</li>
+          <li>Delivering a clean, ranked shortlist by email</li>
+        </ul>
+      </div>
+      <div class="card out">
+        <h3>Out of scope</h3>
+        <ul>
+          <li>Auto-applying on the user's behalf</li>
+          <li>Writing cover letters or editing resumes</li>
+          <li>Impersonating the user in recruiter conversations</li>
+          <li>Replacing the judgement of the person searching</li>
+          <li>Scaling to many users — this is a personal tool, not a platform</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORK THIS -->
+  <section>
+    <div class="kicker">05 · Fork this for yourself</div>
+    <h2>Same bones, different person.</h2>
+    <p class="intro">If you want to adapt this for a different role or domain, four things need to change. The architecture itself stays.</p>
+
+    <div class="forks">
+      <div class="fork">
+        <div class="num">Swap 1 · Profile</div>
+        <h3>Your resume keywords, years, domain, deal-breakers</h3>
+        <p>The scorer reads this as ground truth. Everything below it derives from this file.</p>
+      </div>
+      <div class="fork">
+        <div class="num">Swap 2 · Platforms</div>
+        <h3>Keep the sources that match your market</h3>
+        <p>Designers: Dribbble, Coroflot. Engineers: HN Who's Hiring, Arc. Add one scraper at a time — failure isolation keeps the rest of the run safe.</p>
+      </div>
+      <div class="fork">
+        <div class="num">Swap 3 · Scoring weights</div>
+        <h3>Tune the auto-HIGH and auto-DROP ladders</h3>
+        <p>Which title patterns matter to you, which geos you'll never relocate to, which seniority tier you belong in. A week of real output tells you where your thresholds are wrong.</p>
+      </div>
+      <div class="fork">
+        <div class="num">Swap 4 · Delivery</div>
+        <h3>Excel-in-email, Notion, Slack, Telegram</h3>
+        <p>The delivery boundary is clean — one interface in, any channel out. Pick the surface you'll actually read at 08:15.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- POINTER -->
+  <section>
+    <div class="pointer">
+      <h3>Want the engineering deep-dive?</h3>
+      <p>This page is the 60-second read. The detailed architecture covers every scraper, every guardrail, every runtime mode, every failure case — with code paths referenced.</p>
+      <a href="Architecture.html">Full technical architecture →</a>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="tagline">Built for one. On purpose.</div>
+  <div>By <a href="https://www.linkedin.com/in/harshitha-gangappa/" target="_blank" rel="noopener">Harshitha Gangappa</a></div>
+  <div style="margin-top: 16px; font-size: 12px;">A personal experiment in what "personalised" actually means. · April 2026</div>
+</footer>
+
+</body>
+</html>

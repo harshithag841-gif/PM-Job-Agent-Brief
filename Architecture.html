@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM Job Agent — Technical Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: #0f1729; color: #e2e8f0; min-height: 100vh; padding: 48px 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* ── Header ─────────────────────────────────────────────────────── */
+  header { text-align: center; margin-bottom: 40px; }
+  h1 { font-size: 30px; font-weight: 700; color: #fff; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .subtitle { font-size: 14px; color: #94a3b8; margin-bottom: 24px; }
+  .hero-pills { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .hero-pill {
+    background: #1e293b; border: 1px solid #334155; border-radius: 999px;
+    padding: 6px 14px; font-size: 12px; color: #cbd5e1; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .hero-pill strong { color: #f1f5f9; font-weight: 600; }
+  .hero-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+
+  /* ── Section headings ───────────────────────────────────────────── */
+  section { margin-top: 40px; }
+  h2 {
+    font-size: 18px; font-weight: 600; color: #f1f5f9; letter-spacing: 0.2px;
+    margin-bottom: 4px; padding-left: 14px; border-left: 3px solid #3b82f6;
+  }
+  .section-sub { font-size: 13px; color: #64748b; margin-bottom: 18px; padding-left: 14px; }
+
+  /* ── Trigger row ────────────────────────────────────────────────── */
+  .trigger-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 800px) { .trigger-row { grid-template-columns: 1fr; } }
+  .trigger-box {
+    background: linear-gradient(135deg, #0f172a, #1e1b4b);
+    border: 1px solid #4338ca; border-radius: 12px; padding: 18px 20px;
+  }
+  .trigger-box.primary { border-color: #10b981; background: linear-gradient(135deg, #022c22, #064e3b); }
+  .trigger-box.fallback { border-color: #f59e0b; background: linear-gradient(135deg, #1c1917, #451a03); }
+  .trigger-box .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.8px; margin-bottom: 8px; font-weight: 700; }
+  .trigger-box.primary .label { color: #34d399; }
+  .trigger-box.fallback .label { color: #fbbf24; }
+  .trigger-box .value { font-size: 14px; font-weight: 600; color: #f1f5f9; margin-bottom: 8px; }
+  .trigger-box .detail { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+  .trigger-box code { color: #c7d2fe; background: rgba(99,102,241,0.12); padding: 1px 6px; border-radius: 3px; font-size: 11px; }
+
+  .guard-note {
+    margin-top: 14px; padding: 12px 18px;
+    background: #0f172a; border: 1px dashed #334155; border-radius: 8px;
+    font-size: 12px; color: #94a3b8; line-height: 1.55;
+  }
+  .guard-note strong { color: #e2e8f0; }
+  .guard-note code { color: #c7d2fe; background: rgba(99,102,241,0.12); padding: 1px 6px; border-radius: 3px; font-size: 11px; }
+
+  /* ── Arrows / connectors ────────────────────────────────────────── */
+  .arrow-down { text-align: center; font-size: 26px; color: #3b82f6; margin: 14px 0; }
+  .arrow-down-sm { text-align: center; font-size: 20px; color: #334155; margin: 8px 0; }
+
+  /* ── Orchestrator ───────────────────────────────────────────────── */
+  .orchestrator {
+    background: linear-gradient(135deg, #0c4a6e, #075985);
+    border: 2px solid #0284c7; border-radius: 14px; padding: 20px 32px; text-align: center;
+    margin: 0 auto; max-width: 380px;
+    box-shadow: 0 0 30px rgba(2, 132, 199, 0.18);
+  }
+  .orchestrator .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.8px; color: #38bdf8; margin-bottom: 4px; font-weight: 700; }
+  .orchestrator .value { font-size: 18px; font-weight: 700; color: #e0f2fe; }
+  .orchestrator .detail { font-size: 11px; color: #7dd3fc; margin-top: 6px; }
+
+  /* ── Pipeline steps ─────────────────────────────────────────────── */
+  .step {
+    background: #1e293b; border: 1px solid #334155; border-radius: 14px;
+    padding: 22px 28px;
+  }
+  .step-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .step-num {
+    width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; flex-shrink: 0;
+  }
+  .step-title { font-size: 16px; font-weight: 600; color: #f1f5f9; }
+  .step-file { font-size: 11px; color: #64748b; font-family: 'SF Mono', 'Fira Code', monospace; margin-top: 2px; }
+
+  /* ── Scraper grid ───────────────────────────────────────────────── */
+  .scraper-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 900px) { .scraper-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .scraper-card {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 14px;
+    transition: border-color 0.2s, transform 0.2s;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .scraper-card:hover { border-color: #475569; transform: translateY(-1px); }
+  .scraper-card.dropped { border: 1px dashed #334155; opacity: 0.45; }
+  .scraper-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .scraper-name { font-size: 14px; font-weight: 600; color: #f1f5f9; }
+  .scraper-name.strike { text-decoration: line-through; color: #64748b; }
+  .scraper-jobs { font-size: 18px; font-weight: 700; line-height: 1; }
+  .scraper-tech { font-size: 11px; color: #94a3b8; font-family: 'SF Mono', 'Fira Code', monospace; }
+  .scraper-meta { font-size: 10px; color: #64748b; line-height: 1.4; margin-top: 2px; }
+  .scraper-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .badge {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600;
+    padding: 2px 7px; border-radius: 4px; line-height: 1.3;
+  }
+  .badge-antibot { background: #450a0a; color: #fca5a5; }
+  .badge-auth { background: #422006; color: #fdba74; }
+  .badge-api { background: #052e16; color: #86efac; }
+  .badge-rss { background: #172554; color: #93c5fd; }
+  .badge-selenium { background: #2e1065; color: #c4b5fd; }
+
+  .clr-green { color: #4ade80; } .clr-blue { color: #60a5fa; } .clr-purple { color: #a78bfa; }
+  .clr-amber { color: #fbbf24; } .clr-rose { color: #fb7185; } .clr-cyan { color: #22d3ee; }
+  .clr-teal { color: #2dd4bf; } .clr-indigo { color: #818cf8; }
+
+  .num-green { background: #064e3b; color: #34d399; }
+  .num-blue { background: #1e3a5f; color: #60a5fa; }
+  .num-amber { background: #451a03; color: #fbbf24; }
+  .num-purple { background: #2e1065; color: #a78bfa; }
+  .num-cyan { background: #083344; color: #22d3ee; }
+
+  /* ── Layer / DB boxes ───────────────────────────────────────────── */
+  .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 800px) { .three-col { grid-template-columns: 1fr; } }
+  .info-box {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 16px 18px;
+  }
+  .info-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700; }
+  .info-heading { font-size: 14px; font-weight: 600; color: #f1f5f9; font-family: 'SF Mono', 'Fira Code', monospace; margin-bottom: 6px; }
+  .info-desc { font-size: 12px; color: #cbd5e1; line-height: 1.55; }
+  .info-meta { font-size: 10px; color: #64748b; margin-top: 8px; font-style: italic; }
+
+  .score-tier { text-align: center; }
+  .score-tier .info-heading { font-size: 22px; font-weight: 700; font-family: inherit; }
+  .score-tier .info-desc { font-size: 11px; margin-top: 2px; }
+
+  /* ── External services ──────────────────────────────────────────── */
+  .ext-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (max-width: 700px) { .ext-grid { grid-template-columns: 1fr; } }
+  .ext-item {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .ext-item .left { display: flex; align-items: center; gap: 10px; }
+  .ext-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: #22c55e; } .dot-blue { background: #3b82f6; }
+  .dot-amber { background: #f59e0b; } .dot-purple { background: #8b5cf6; }
+  .dot-rose { background: #f43f5e; } .dot-cyan { background: #06b6d4; }
+  .ext-name { font-size: 13px; color: #f1f5f9; font-weight: 500; }
+  .ext-role { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .ext-quota { font-size: 10px; color: #94a3b8; font-family: 'SF Mono', 'Fira Code', monospace; text-align: right; white-space: nowrap; }
+
+  /* ── Runtime modes ──────────────────────────────────────────────── */
+  .mode-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 800px) { .mode-grid { grid-template-columns: repeat(2, 1fr); } }
+  .mode-card {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 14px 16px;
+  }
+  .mode-card.prod { border-color: #059669; }
+  .mode-name { font-size: 13px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+  .mode-flag { font-size: 10px; font-family: 'SF Mono', 'Fira Code', monospace; color: #60a5fa; margin-bottom: 8px; }
+  .mode-desc { font-size: 11px; color: #94a3b8; line-height: 1.5; }
+
+  /* ── Guardrails & secrets ───────────────────────────────────────── */
+  .guardrail {
+    background: #0f172a; border: 1px solid #1e293b; border-left: 3px solid #f59e0b;
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;
+  }
+  .guardrail-title { font-size: 13px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+  .guardrail-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+
+  /* ── Stats bar ──────────────────────────────────────────────────── */
+  .stats-bar {
+    display: flex; justify-content: center; gap: 40px; padding: 20px;
+    background: #1e293b; border-radius: 12px; border: 1px solid #334155;
+    flex-wrap: wrap;
+  }
+  .stat { text-align: center; }
+  .stat-value { font-size: 24px; font-weight: 700; color: #f1f5f9; }
+  .stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+  code { color: #c7d2fe; background: rgba(99,102,241,0.12); padding: 1px 6px; border-radius: 3px; font-size: 11px; font-family: 'SF Mono', 'Fira Code', monospace; }
+  strong { color: #f1f5f9; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- HEADER                                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <header>
+    <h1>PM Job Agent &mdash; Technical Architecture</h1>
+    <p class="subtitle">Autonomous daily job scraping, scoring, and email delivery pipeline</p>
+    <div class="hero-pills">
+      <span class="hero-pill"><span class="dot"></span>Cloud-native &mdash; <strong>GitHub Actions</strong></span>
+      <span class="hero-pill"><strong>8</strong> scrapers</span>
+      <span class="hero-pill"><strong>~380</strong> raw jobs/day</span>
+      <span class="hero-pill"><strong>50</strong> ranked &amp; emailed</span>
+      <span class="hero-pill"><strong>08:15 IST</strong> daily</span>
+      <span class="hero-pill"><strong>&#x20B9;0</strong>/month</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: PIPELINE RIBBON (top-level flow)                       -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Pipeline at a Glance</h2>
+    <p class="section-sub">The whole workflow in six boxes. Each stage is detailed below.</p>
+    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 6px;">
+      <div style="background: #1e293b; border: 1px solid #334155; border-left: 3px solid #34d399; border-radius: 10px; padding: 14px 12px; text-align: center;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px; color: #34d399; font-weight: 700; margin-bottom: 8px;">01</div>
+        <div style="font-size: 13px; font-weight: 600; color: #f1f5f9;">Trigger</div>
+        <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">08:15 IST<br/>dual, idempotent</div>
+      </div>
+      <div style="background: #1e293b; border: 1px solid #334155; border-left: 3px solid #60a5fa; border-radius: 10px; padding: 14px 12px; text-align: center;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px; color: #60a5fa; font-weight: 700; margin-bottom: 8px;">02</div>
+        <div style="font-size: 13px; font-weight: 600; color: #f1f5f9;">Scrape</div>
+        <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">8 platforms<br/>~380 raw jobs</div>
+      </div>
+      <div style="background: #1e293b; border: 1px solid #334155; border-left: 3px solid #a78bfa; border-radius: 10px; padding: 14px 12px; text-align: center;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px; color: #a78bfa; font-weight: 700; margin-bottom: 8px;">03</div>
+        <div style="font-size: 13px; font-weight: 600; color: #f1f5f9;">Dedup</div>
+        <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">URL + semantic<br/>dual-pass</div>
+      </div>
+      <div style="background: #1e293b; border: 1px solid #334155; border-left: 3px solid #fbbf24; border-radius: 10px; padding: 14px 12px; text-align: center;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px; color: #fbbf24; font-weight: 700; margin-bottom: 8px;">04</div>
+        <div style="font-size: 13px; font-weight: 600; color: #f1f5f9;">Score</div>
+        <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">3 layers<br/>rules then LLM</div>
+      </div>
+      <div style="background: #1e293b; border: 1px solid #334155; border-left: 3px solid #22d3ee; border-radius: 10px; padding: 14px 12px; text-align: center;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px; color: #22d3ee; font-weight: 700; margin-bottom: 8px;">05</div>
+        <div style="font-size: 13px; font-weight: 600; color: #f1f5f9;">Rank</div>
+        <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">tier, merge<br/>top-50 cap</div>
+      </div>
+      <div style="background: #1e293b; border: 1px solid #334155; border-left: 3px solid #fb7185; border-radius: 10px; padding: 14px 12px; text-align: center;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px; color: #fb7185; font-weight: 700; margin-bottom: 8px;">06</div>
+        <div style="font-size: 13px; font-weight: 600; color: #f1f5f9;">Deliver</div>
+        <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">Excel + email<br/>08:18 IST</div>
+      </div>
+    </div>
+    <style>
+      @media (max-width: 900px) {
+        section > div[style*="grid-template-columns: repeat(6, 1fr)"] { grid-template-columns: repeat(3, 1fr) !important; }
+      }
+      @media (max-width: 560px) {
+        section > div[style*="grid-template-columns: repeat(6, 1fr)"] { grid-template-columns: repeat(2, 1fr) !important; }
+      }
+    </style>
+    <div style="text-align: center; color: #64748b; font-size: 11px; margin-top: 14px; font-family: 'SF Mono', 'Fira Code', monospace;">
+      cron-job.org / GitHub cron &rarr; 8 scrapers &rarr; SQLite dedup &rarr; rules + LLM &rarr; top-50 cap &rarr; Excel + Resend
+    </div>
+  </section>
+
+  <div class="arrow-down">&darr;</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: DAILY TRIGGER                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Daily Trigger</h2>
+    <p class="section-sub">Dual-trigger architecture with idempotent dedup guard. Double-firing is a safe no-op.</p>
+
+    <div class="trigger-row">
+      <div class="trigger-box primary">
+        <div class="label">Primary &mdash; External Cron</div>
+        <div class="value">cron-job.org &rarr; 08:15 IST</div>
+        <div class="detail">Free external scheduler hits GitHub&rsquo;s <code>POST /actions/workflows/daily.yml/dispatches</code> REST API with a classic PAT (<code>workflow</code> scope). Independent of GitHub&rsquo;s own scheduler reliability.</div>
+      </div>
+      <div class="trigger-box fallback">
+        <div class="label">Fallback &mdash; GitHub Cron</div>
+        <div class="value"><code>53 2 * * *</code> UTC &rarr; 08:23 IST</div>
+        <div class="detail">Native <code>schedule:</code> event on the workflow. Best-effort: GitHub has silently dropped runs multiple times since Jan 2026, so kept as a zero-cost safety net only.</div>
+      </div>
+      <div class="trigger-box">
+        <div class="label">Workflow</div>
+        <div class="value"><code>.github/workflows/daily.yml</code></div>
+        <div class="detail">20-min timeout, Ubuntu latest + Python 3.11 + Chrome stable, <code>TZ=Asia/Kolkata</code>. 10 secrets injected from GitHub&rsquo;s encrypted vault. Commits <code>jobs.db</code> back to repo on success.</div>
+      </div>
+    </div>
+
+    <div class="guard-note">
+      <strong>Idempotency guard.</strong> Both triggers land in the same workflow. A pre-flight <code>_already_ran_today()</code> check in <code>main.py</code> reads <code>run_stats/history.csv</code> &mdash; if today&rsquo;s digest has already been sent, the run exits in under a second. Double-firing (both triggers land) is safe; the second run no-ops.
+    </div>
+
+    <div style="margin-top: 14px; padding: 14px 18px; background: linear-gradient(135deg, #0c2a22, #064e3b); border: 1px solid #065f46; border-radius: 8px; font-size: 12px; color: #a7f3d0; line-height: 1.6;">
+      <strong style="color: #6ee7b7;">Why GitHub Actions, not a VPS?</strong> Zero idle cost, encrypted secrets vault, and I can read every run&rsquo;s logs from any browser. A VPS would mean 24/7 compute for a workload that runs 20 minutes a day &mdash; and process supervision I&rsquo;d have to maintain myself. Actions also gives me a free audit trail: every run is a linkable URL.
+    </div>
+  </section>
+
+  <div class="arrow-down">&darr;</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: ORCHESTRATOR                                           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div class="orchestrator">
+    <div class="label">Orchestrator</div>
+    <div class="value">main.py</div>
+    <div class="detail">8-step pipeline &middot; CLI flags <code style="color:#bae6fd;">--dry</code> <code style="color:#bae6fd;">--test</code> <code style="color:#bae6fd;">--preview</code> &middot; <code style="color:#bae6fd;">NO_PERSIST</code> env for test-mode</div>
+  </div>
+
+  <div class="arrow-down">&darr;</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: SCRAPE                                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Step 1 &mdash; Scrape 8 Platforms</h2>
+    <p class="section-sub">Runs sequentially with per-scraper caps; total ~380 raw jobs/day. Each scraper self-reports via <code>delivered via strategy=X</code> telemetry.</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num num-green">1</div>
+        <div>
+          <div class="step-title">Platform scrapers</div>
+          <div class="step-file">scrapers/*.py</div>
+        </div>
+      </div>
+      <div class="scraper-grid">
+
+        <div class="scraper-card">
+          <div class="scraper-row">
+            <div class="scraper-name">LinkedIn</div>
+            <div class="scraper-jobs clr-blue">100</div>
+          </div>
+          <div class="scraper-tech">Guest API</div>
+          <div class="scraper-meta">Paginated jobs search with <code>geoId</code> + <code>f_E</code> experience filter. 72h freshness cap.</div>
+          <div class="scraper-badges"><span class="badge badge-api">API</span></div>
+        </div>
+
+        <div class="scraper-card">
+          <div class="scraper-name">IIMJobs</div>
+          <div class="scraper-tech" style="margin-top:4px;">Internal REST API</div>
+          <div class="scraper-meta">IT &amp; Systems + Consulting verticals, 5 pages each &times; 50 jobs/page, then seniority filter.</div>
+          <div class="scraper-row"><div></div><div class="scraper-jobs clr-purple">60</div></div>
+          <div class="scraper-badges"><span class="badge badge-api">API</span></div>
+        </div>
+
+        <div class="scraper-card">
+          <div class="scraper-row">
+            <div class="scraper-name">Adzuna</div>
+            <div class="scraper-jobs clr-amber">~50</div>
+          </div>
+          <div class="scraper-tech">Adzuna public API</div>
+          <div class="scraper-meta">Multi-board aggregator (LinkedIn, Foundit, direct ATS, etc.). 6 query combinations &times; India.</div>
+          <div class="scraper-badges"><span class="badge badge-api">API</span></div>
+        </div>
+
+        <div class="scraper-card">
+          <div class="scraper-row">
+            <div class="scraper-name">Indeed</div>
+            <div class="scraper-jobs clr-amber">~20</div>
+          </div>
+          <div class="scraper-tech">Apify actor</div>
+          <div class="scraper-meta">Real <code>in.indeed.com</code> via <code>misceres~indeed-scraper</code>. Sync endpoint, structured JSON, tight PM-title regex.</div>
+          <div class="scraper-badges"><span class="badge badge-antibot">Cloudflare</span><span class="badge badge-api">API</span></div>
+        </div>
+
+        <div class="scraper-card">
+          <div class="scraper-row">
+            <div class="scraper-name">Instahyre</div>
+            <div class="scraper-jobs clr-rose">~50</div>
+          </div>
+          <div class="scraper-tech">Authenticated HTTP</div>
+          <div class="scraper-meta">Login &rarr; session cookies &rarr; paginated opportunities API. Seniority filter post-fetch.</div>
+          <div class="scraper-badges"><span class="badge badge-auth">Login</span><span class="badge badge-api">API</span></div>
+        </div>
+
+        <div class="scraper-card">
+          <div class="scraper-row">
+            <div class="scraper-name">Hirist</div>
+            <div class="scraper-jobs clr-cyan">~40</div>
+          </div>
+          <div class="scraper-tech">Selenium</div>
+          <div class="scraper-meta">Headless Chrome across 4 role slugs (product-management, senior-PM, head-of-product, director-product).</div>
+          <div class="scraper-badges"><span class="badge badge-selenium">Selenium</span></div>
+        </div>
+
+        <div class="scraper-card">
+          <div class="scraper-row">
+            <div class="scraper-name">We Work Remotely</div>
+            <div class="scraper-jobs clr-teal">~2&ndash;5</div>
+          </div>
+          <div class="scraper-tech">RSS + cloudscraper</div>
+          <div class="scraper-meta">RSS pull &rarr; 7-day freshness cap, language denylist, foreign legal-suffix check, near-dup collapse, strict US-only policy (drops "Remote &mdash; USA" without a positive global signal), URL liveness via <code>cloudscraper</code>.</div>
+          <div class="scraper-badges"><span class="badge badge-rss">RSS</span><span class="badge badge-antibot">Cloudflare</span></div>
+        </div>
+
+        <div class="scraper-card">
+          <div class="scraper-name">Wellfound</div>
+          <div class="scraper-tech" style="margin-top:4px;">ScraperAPI proxy</div>
+          <div class="scraper-meta">Residential IP &rarr; <code>__NEXT_DATA__</code> Apollo extract. Strict US-only policy: drops remote-without-India listings unless a global-hiring signal (India / worldwide / EU / APAC / named non-US city) is present in the body.</div>
+          <div class="scraper-row"><div></div><div class="scraper-jobs clr-green">~0&ndash;5</div></div>
+          <div class="scraper-badges"><span class="badge badge-antibot">Cloudflare</span></div>
+        </div>
+
+        <div class="scraper-card dropped" style="grid-column: span 4;">
+          <div class="scraper-row">
+            <div class="scraper-name strike">Naukri &middot; Remote.co &middot; Upwork</div>
+            <div style="font-size:11px; color:#64748b;">dropped &mdash; reCAPTCHA v3 / paywall / SSO-only</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow-down-sm">&darr;</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: DEDUPLICATE                                            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Step 2 &mdash; Deduplicate</h2>
+    <p class="section-sub">Three-layer dedup: URL-based, semantic <code>(company, role)</code> keys, and a dual-pass cross-platform collapse across today&rsquo;s scrape and yesterday&rsquo;s queue.</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num num-blue">2</div>
+        <div>
+          <div class="step-title">SQLite jobs.db</div>
+          <div class="step-file">deduplicator.py &middot; jobs.db committed back to repo each run</div>
+        </div>
+      </div>
+      <div class="three-col">
+        <div class="info-box">
+          <div class="info-heading">seen_jobs</div>
+          <div class="info-desc">Every URL ever emailed, plus a <code>dedup_key</code> column that holds the normalized <code>(company, role-bucket)</code> pair. Both checked on every new scrape: URL match or key match &rarr; drop.</div>
+          <div class="info-meta">30-day rolling window</div>
+        </div>
+        <div class="info-box">
+          <div class="info-heading">job_queue</div>
+          <div class="info-desc">Overflow beyond today&rsquo;s top-50 cap, plus deferred-gate items for LLM re-scoring on lean days.</div>
+          <div class="info-meta">30-day expiry</div>
+        </div>
+        <div class="info-box">
+          <div class="info-heading">score_cache</div>
+          <div class="info-desc">Persisted Groq LLM scores keyed by URL. Re-scoring skipped if a fresh score exists.</div>
+          <div class="info-meta">30-day window &middot; saves LLM quota</div>
+        </div>
+      </div>
+      <div style="margin-top:14px; padding:14px 18px; background:#0f172a; border:1px dashed #334155; border-radius:8px; font-size:12px; color:#94a3b8; line-height:1.55;">
+        <strong style="color:#f1f5f9;">Cross-platform collapse &mdash; dual-pass.</strong>
+        One pass on today&rsquo;s scrape pool (before scoring, reduces LLM cost) and a second pass on the merged pool (today&rsquo;s qualifying + queue carryover). Both group by <code>(normalized_company, role_bucket)</code> and keep the higher-priority platform: LinkedIn &rarr; Hirist / IIMJobs / Instahyre &rarr; Indeed &rarr; Adzuna &rarr; Wellfound &rarr; WWR. Sub-qualifiers preserved so &ldquo;Senior PM&rdquo; and &ldquo;Senior PM &mdash; Banking&rdquo; stay distinct.
+      </div>
+
+      <div style="margin-top: 14px; padding: 14px 18px; background: linear-gradient(135deg, #0c1e3a, #1e3a8a); border: 1px solid #1d4ed8; border-radius: 8px; font-size: 12px; color: #bfdbfe; line-height: 1.6;">
+        <strong style="color: #93c5fd;">Why SQLite committed to the repo, not Postgres?</strong> The database is tiny (~400 KB), single-writer, and only needs to persist across daily runs. Committing it back to main after each run gives me free versioning, free backup, and zero infra &mdash; no managed DB, no connection strings, no ops. Git is the backup. If the file corrupts, I revert one commit.
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow-down-sm">&darr;</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: SCORE                                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Step 3 &mdash; Score (3-Layer Pipeline)</h2>
+    <p class="section-sub">Deterministic filters first, LLM only for the ambiguous tail. LLM gate prevents overuse of Groq&rsquo;s 30 RPM free tier.</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num num-amber">3</div>
+        <div>
+          <div class="step-title">Rules + Groq LLM</div>
+          <div class="step-file">scorer.py &middot; config.py (weights, thresholds, profile)</div>
+        </div>
+      </div>
+      <div class="three-col">
+        <div class="info-box">
+          <div class="info-label clr-green">Layer 1 &middot; Hard filters</div>
+          <div class="info-desc">Seniority keywords, freshness caps (LinkedIn 72h / others 7d), US-West-Coast geo drop. Runs inside each scraper before a job ever enters the pipeline.</div>
+          <div class="info-meta">scrapers/*.py + filters.py</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label clr-blue">Layer 2 &middot; Graded rules</div>
+          <div class="info-desc">Auto-HIGH ladder (90/78/76/65/62) for strong matches. Auto-DROP for junior / non-PM / blocked geo. No API calls &mdash; covers ~70% of listings deterministically.</div>
+          <div class="info-meta">scorer.py &rarr; _layer2_score()</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label clr-purple">Layer 3 &middot; Groq LLM</div>
+          <div class="info-desc"><code>llama-3.3-70b-versatile</code>, batched 10 jobs/call, 30s timeout. Smart gate skips LLM when strong pool already has 75 jobs; runs an opportunistic 50-job sample so nothing is blind. Deferred items drained from the queue on lean days.</div>
+          <div class="info-meta">30 RPM free tier &middot; typical burn: 5 RPM</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; padding: 14px 18px; background: linear-gradient(135deg, #2a1065, #3b0764); border: 1px solid #6b21a8; border-radius: 8px; font-size: 12px; color: #e9d5ff; line-height: 1.6;">
+        <strong style="color: #d8b4fe;">Why LLM only for the ambiguous tail, not for every job?</strong> Groq&rsquo;s free tier caps at 30 RPM &mdash; enough only if I&rsquo;m careful. Rules-only would miss the subtle mismatches LLMs catch in seconds; LLM-only would burn quota on jobs a keyword check could kill. Deterministic rules handle ~70% of decisions; the LLM earns its quota on the 30% where language ambiguity actually matters. Same logic as a senior reviewer: automate what&rsquo;s obvious, think about what isn&rsquo;t.
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow-down-sm">&darr;</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: FILTER + RANK                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Step 4 &mdash; Filter, Merge &amp; Rank</h2>
+    <p class="section-sub">Score-banded tiering + overflow queue + top-50 cap. Merges today&rsquo;s qualifying jobs with carryover from the queue.</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num num-purple">4</div>
+        <div>
+          <div class="step-title">Tier, merge, sort, cap</div>
+          <div class="step-file">main.py pipeline steps 4&ndash;6</div>
+        </div>
+      </div>
+      <div class="three-col">
+        <div class="info-box score-tier">
+          <div class="info-label clr-green">Must-apply</div>
+          <div class="info-heading clr-green">&ge; 65</div>
+          <div class="info-desc">Top tier &mdash; green rows in Excel. Highest fit against profile.</div>
+        </div>
+        <div class="info-box score-tier">
+          <div class="info-label clr-amber">Worth a look</div>
+          <div class="info-heading clr-amber">55&ndash;64</div>
+          <div class="info-desc">Yellow rows &mdash; borderline fit. Surfaces only if top tier isn&rsquo;t already full.</div>
+        </div>
+        <div class="info-box score-tier">
+          <div class="info-label" style="color:#64748b;">Overflow</div>
+          <div class="info-heading" style="color:#94a3b8;">beyond 50</div>
+          <div class="info-desc">Pushed to <code>job_queue</code>. Merged into the pool on subsequent runs.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow-down-sm">&darr;</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: EMAIL DELIVERY                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Step 5 &mdash; Build &amp; Send Email</h2>
+    <p class="section-sub">Excel workbook + summary HTML body + Resend delivery. Health report email follows the main digest.</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num num-cyan">5</div>
+        <div>
+          <div class="step-title">Digest email &rarr; harshithag841@gmail.com</div>
+          <div class="step-file">email_builder.py &middot; health_email.py &rarr; Resend API</div>
+        </div>
+      </div>
+      <div class="three-col">
+        <div class="info-box">
+          <div class="info-label clr-cyan">Excel attachment</div>
+          <div class="info-desc"><code>PM_Jobs_YYYY-MM-DD.xlsx</code><br>Columns: Rank, Score, Role, Company, Platform, Location, Work Mode, Posted, Reason, Apply &rarr;.<br>Color coding: green (must-apply), yellow (worth a look), blue tint (queue carryover). Frozen header row + auto-filter + live hyperlinks.</div>
+          <div class="info-meta">openpyxl &middot; formula-injection escape on all scraped text</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label clr-purple">HTML summary body</div>
+          <div class="info-desc">Minimal &mdash; stats header (total / must-apply / worth-a-look counts), platform breakdown table, &ldquo;open the attached Excel&rdquo; call-to-action, footer with model info.</div>
+          <div class="info-meta">No job cards in body &mdash; Excel is the canonical artifact</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label clr-rose">Delivery + health</div>
+          <div class="info-desc">Resend API with 30s bounded send via <code>ThreadPoolExecutor</code>. Subject: <code>&#x1F3AF; N PM jobs &middot; K must-apply &middot; DD MMM</code>. Separate health-report email (&#x1F7E2;/&#x1F7E1;/&#x1F534;) always sent &mdash; even on failed runs.</div>
+          <div class="info-meta">Typical delivery: ~08:18 IST</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: EXTERNAL SERVICES                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>External Services</h2>
+    <p class="section-sub">All paid / metered services sit comfortably inside free tiers at current usage.</p>
+
+    <div class="ext-grid">
+      <div class="ext-item">
+        <div class="left"><span class="ext-dot dot-purple"></span><div><div class="ext-name">Groq API</div><div class="ext-role"><code>llama-3.3-70b-versatile</code> &middot; LLM scoring</div></div></div>
+        <div class="ext-quota">30 RPM free<br>~5 RPM used</div>
+      </div>
+      <div class="ext-item">
+        <div class="left"><span class="ext-dot dot-cyan"></span><div><div class="ext-name">Resend</div><div class="ext-role">Transactional email + attachments</div></div></div>
+        <div class="ext-quota">3k emails/mo free<br>~60/mo used</div>
+      </div>
+      <div class="ext-item">
+        <div class="left"><span class="ext-dot dot-amber"></span><div><div class="ext-name">Adzuna</div><div class="ext-role">Multi-board aggregator API</div></div></div>
+        <div class="ext-quota">1,000 calls/mo free<br>~60 used</div>
+      </div>
+      <div class="ext-item">
+        <div class="left"><span class="ext-dot dot-green"></span><div><div class="ext-name">Apify</div><div class="ext-role"><code>misceres~indeed-scraper</code> actor &middot; real Indeed</div></div></div>
+        <div class="ext-quota">$5/mo platform credit<br>~$0.75 used</div>
+      </div>
+      <div class="ext-item">
+        <div class="left"><span class="ext-dot dot-rose"></span><div><div class="ext-name">ScraperAPI</div><div class="ext-role">Residential proxy for Wellfound (Cloudflare bypass)</div></div></div>
+        <div class="ext-quota">1,000 credits/mo free<br>~600 used</div>
+      </div>
+      <div class="ext-item">
+        <div class="left"><span class="ext-dot dot-blue"></span><div><div class="ext-name">cron-job.org</div><div class="ext-role">External primary trigger</div></div></div>
+        <div class="ext-quota">Free tier<br>1 job active</div>
+      </div>
+      <div class="ext-item">
+        <div class="left"><span class="ext-dot dot-green"></span><div><div class="ext-name">GitHub Actions</div><div class="ext-role">Cloud runner, workflow dispatch, state commit-back</div></div></div>
+        <div class="ext-quota">2,000 min/mo free<br>~180 used</div>
+      </div>
+      <div class="ext-item">
+        <div class="left"><span class="ext-dot dot-blue"></span><div><div class="ext-name">SQLite jobs.db</div><div class="ext-role">Dedup / queue / score cache &middot; committed to repo each run</div></div></div>
+        <div class="ext-quota">~400 KB<br>tracked in git</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: RUNTIME MODES                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Runtime Modes</h2>
+    <p class="section-sub">The orchestrator supports four modes. Scheduled production runs use defaults; the rest are developer / test affordances.</p>
+
+    <div class="mode-grid">
+      <div class="mode-card prod">
+        <div class="mode-name">Production</div>
+        <div class="mode-flag">(default)</div>
+        <div class="mode-desc">Full pipeline. Sends email. Writes <code>seen_jobs</code>, <code>job_queue</code>, <code>history.csv</code>. Commits <code>jobs.db</code> back to main.</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-name">Dry run</div>
+        <div class="mode-flag">--dry</div>
+        <div class="mode-desc">Full scrape + score + rank. <strong>No email</strong>, no dedup writes, no commit-back. For verifying scraper output on demand.</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-name">Preview</div>
+        <div class="mode-flag">--preview</div>
+        <div class="mode-desc">Saves the digest HTML to <code>/tmp/digest_preview.html</code> instead of sending. No DB writes.</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-name">No-persist</div>
+        <div class="mode-flag">NO_PERSIST=1</div>
+        <div class="mode-desc"><strong>Sends the email</strong> so you see the real output, but skips every DB write (<code>mark_sent</code>, <code>push_to_queue</code>, commit-back, <code>_already_ran_today</code> guard). Intended for feature-branch end-to-end validation.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: OPERATIONAL GUARDRAILS                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Operational Guardrails</h2>
+    <p class="section-sub">Defensive measures added after an end-to-end audit. None block correct runs; all prevent known failure modes.</p>
+
+    <div class="guardrail">
+      <div class="guardrail-title">Excel formula-injection escape</div>
+      <div class="guardrail-desc">Every scraped text field is passed through <code>_safe_text()</code> before write. Leading <code>=</code>, <code>+</code>, <code>-</code>, <code>@</code> are neutralised so malicious job descriptions can&rsquo;t execute as formulas when the workbook opens.</div>
+    </div>
+    <div class="guardrail">
+      <div class="guardrail-title">Bounded external calls</div>
+      <div class="guardrail-desc">30-second timeout on every Groq LLM call. 30-second <code>ThreadPoolExecutor</code> wrap on every Resend email send. Prevents a stuck upstream from hanging the 20-minute workflow timeout.</div>
+    </div>
+    <div class="guardrail">
+      <div class="guardrail-title">Per-scraper isolation</div>
+      <div class="guardrail-desc">Each scraper runs in its own try/except inside <code>_run_scraper()</code>. A crash in Wellfound doesn&rsquo;t abort the run &mdash; the orchestrator logs a <code>suspect</code> state for that platform and continues. Empty-return vs. silent-block is distinguished by stdout scanning for error markers.</div>
+    </div>
+    <div class="guardrail">
+      <div class="guardrail-title">Anti-bot discipline</div>
+      <div class="guardrail-desc"><code>cloudscraper</code> for Cloudflare-gated listings (WWR). ScraperAPI residential proxy for Wellfound. Apify managed actor for Indeed. Explicit failure modes kept in logs so silent 403s never look like empty results.</div>
+    </div>
+    <div class="guardrail">
+      <div class="guardrail-title">Source-level filtering</div>
+      <div class="guardrail-desc">Every scraper enforces its own freshness cap (LinkedIn 72h, all others 7d), title regex, and (for WWR + Wellfound) a strict US-only policy that drops ambiguous remote roles unless a positive global-hiring signal is present. Stops junk from ever reaching the scoring layer.</div>
+    </div>
+    <div class="guardrail">
+      <div class="guardrail-title">Cross-platform dedup (dual-pass)</div>
+      <div class="guardrail-desc">Same role at the same company on multiple platforms (LinkedIn vs Adzuna, today vs yesterday&rsquo;s queue) collapses to one entry via a normalized <code>(company, role-bucket)</code> key. URL-based dedup misses these because each platform uses a different URL format. Pass 1 runs on today&rsquo;s scrape pool, Pass 2 runs on the merged pool after queue load.</div>
+    </div>
+    <div class="guardrail">
+      <div class="guardrail-title">Data hygiene</div>
+      <div class="guardrail-desc">Private repo. <code>jobs.db</code> carries URLs + scraped titles only, no PII. Credentials all in GitHub Secrets vault; <code>.env</code> + <code>*.numbers</code> git-ignored. Scoring reasons and user profile never logged in plaintext.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: SECRETS VAULT                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Secrets Vault</h2>
+    <p class="section-sub">10 active secrets in GitHub &rarr; Settings &rarr; Secrets and variables &rarr; Actions. Workflow YAML maps each to an env var at runtime.</p>
+
+    <div class="three-col">
+      <div class="info-box">
+        <div class="info-label clr-cyan">Email delivery</div>
+        <div class="info-desc"><code>RESEND_API_KEY</code> &middot; <code>RESEND_TO_EMAIL</code> &middot; <code>RESEND_FROM_EMAIL</code></div>
+      </div>
+      <div class="info-box">
+        <div class="info-label clr-purple">LLM scoring</div>
+        <div class="info-desc"><code>GROQ_API_KEY</code></div>
+      </div>
+      <div class="info-box">
+        <div class="info-label clr-amber">Scraper providers</div>
+        <div class="info-desc"><code>ADZUNA_APP_ID</code> + <code>ADZUNA_APP_KEY</code> &middot; <code>SCRAPERAPI_KEY</code> (Wellfound) &middot; <code>APIFY_API_KEY</code> (Indeed)</div>
+      </div>
+      <div class="info-box" style="grid-column: span 2;">
+        <div class="info-label clr-rose">Platform login</div>
+        <div class="info-desc"><code>INSTAHYRE_EMAIL</code> + <code>INSTAHYRE_PASSWORD</code>. LinkedIn and Wellfound run unauthenticated via their respective bypass paths; no credentials needed.</div>
+      </div>
+      <div class="info-box">
+        <div class="info-label" style="color:#64748b;">Dropped</div>
+        <div class="info-desc">LinkedIn / Wellfound login secrets removed once unauthenticated paths proved reliable.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: STATS                                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>At a Glance</h2>
+    <p class="section-sub">&nbsp;</p>
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-value">8</div><div class="stat-label">Scrapers</div></div>
+      <div class="stat"><div class="stat-value">~380</div><div class="stat-label">Raw jobs/day</div></div>
+      <div class="stat"><div class="stat-value">3</div><div class="stat-label">Scoring layers</div></div>
+      <div class="stat"><div class="stat-value">50</div><div class="stat-label">Jobs emailed</div></div>
+      <div class="stat"><div class="stat-value">30</div><div class="stat-label">Day dedup window</div></div>
+      <div class="stat"><div class="stat-value">08:15</div><div class="stat-label">IST daily</div></div>
+      <div class="stat"><div class="stat-value">&#x20B9;0</div><div class="stat-label">Monthly cost</div></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION: FORK THIS FOR YOURSELF                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Fork This For Yourself</h2>
+    <p class="section-sub">The architecture is portable. To adapt it for a different role, domain, or person, swap four things &mdash; the rest stays.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+
+      <div style="background: #1e293b; border: 1px solid #334155; border-left: 3px solid #34d399; border-radius: 10px; padding: 18px 20px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: #34d399; font-weight: 700; margin-bottom: 8px;">Swap 1 &middot; The profile</div>
+        <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">Replace <code>config.py</code>&rsquo;s user profile block with yours &mdash; resume keywords, years of experience, domain expertise, deal-breakers. The scorer reads this as ground truth.</div>
+      </div>
+
+      <div style="background: #1e293b; border: 1px solid #334155; border-left: 3px solid #60a5fa; border-radius: 10px; padding: 18px 20px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: #60a5fa; font-weight: 700; margin-bottom: 8px;">Swap 2 &middot; The platforms</div>
+        <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">Keep the scrapers that match your role&rsquo;s market; drop the rest. Designers: add Dribbble, Coroflot. Engineers: add Hacker News Who&rsquo;s Hiring, Arc. Add one scraper at a time &mdash; the <code>_run_scraper()</code> isolation makes failures safe.</div>
+      </div>
+
+      <div style="background: #1e293b; border: 1px solid #334155; border-left: 3px solid #fbbf24; border-radius: 10px; padding: 18px 20px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: #fbbf24; font-weight: 700; margin-bottom: 8px;">Swap 3 &middot; The scoring weights</div>
+        <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">Tune Layer 2&rsquo;s ladder in <code>scorer.py</code> &mdash; which title patterns are auto-HIGH, which geos are auto-DROP, which seniority tier matters. A week of real output tells you where your thresholds are wrong.</div>
+      </div>
+
+      <div style="background: #1e293b; border: 1px solid #334155; border-left: 3px solid #a78bfa; border-radius: 10px; padding: 18px 20px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: #a78bfa; font-weight: 700; margin-bottom: 8px;">Swap 4 &middot; The delivery</div>
+        <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">Excel-in-email fits me. You may prefer a Notion page, a Slack DM, or a Telegram bot. The <code>email_builder.py</code> boundary is clean &mdash; one interface in, any channel out.</div>
+      </div>
+
+    </div>
+
+    <div style="margin-top: 16px; padding: 14px 18px; background: #0f172a; border: 1px dashed #334155; border-radius: 8px; font-size: 12px; color: #94a3b8; line-height: 1.6; text-align: center;">
+      <strong style="color: #e2e8f0;">What doesn&rsquo;t change:</strong> the dual-trigger, the 3-layer scoring philosophy, the SQLite-in-repo pattern, the dedup strategy, the free-tier discipline. Those are the load-bearing choices.
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
